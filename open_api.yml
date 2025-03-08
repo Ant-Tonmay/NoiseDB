@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Sample API
+  description: A sample API to demonstrate OpenAPI specification
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+    description: Dev server
+paths:
+  /noise:
+   get:
+     tags:
+       - Noise
+     parameters:
+       - name: location
+         in: query
+         schema:
+          type: string
+       - name : start_date
+         in : query
+         schema:
+          type: string
+       - name : end_date
+         in : query
+         schema:
+          type: string
+     responses:
+        '200':
+          description: Noise of Current Location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Noise'
+   post: 
+      tags:
+       - Noise
+      requestBody : 
+        content:
+          application/json:
+            schema:
+              type : object
+              $ref: '#/components/schemas/Noise'
+      responses:
+        '201':
+          description: created record 
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Noise'
+  
+  /noise/time:
+    get:
+      tags:
+       - Noise
+      parameters:
+        - name : date 
+          in: query 
+          schema: 
+            type : string 
+
+      responses:
+        '200':
+          description: Noise of Current Location
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Noise'
+   
+components:
+  schemas:
+    Noise:
+      type: object
+      properties:
+        location:
+          type: string
+        noise_value:
+          type: number
+
+
