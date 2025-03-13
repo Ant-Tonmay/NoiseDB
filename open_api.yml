@@ -80,5 +80,7 @@ components:
           type: string
         noise_value:
           type: number
+        color_band:
+          type: string
 
 
