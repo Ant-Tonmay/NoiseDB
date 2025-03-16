@@ -17,13 +17,14 @@ class NoiseCollection(Base):
     __tablename__ = "noise"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'))  # Foreign key reference
+    user_id = Column(String(20), ForeignKey('users.user_id'))  # Foreign key reference
     longitude = Column(String(10))
     latitude = Column(String(10))
-    date = Column(Date)
-    time = Column(Time)
+    date = Column(String(10))
+    time = Column(String(10))
     max_noise_val = Column(Numeric)
     color_band = Column(String(10))
 
     # Relationship to User
     user = relationship("User", back_populates="noise_collections")
+    
