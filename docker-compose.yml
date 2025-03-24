@@ -1,0 +1,27 @@
+services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    container_name: NoiseDB-FastApi
+    environment:
+      MYSQL_ROOT_PASSWORD: Root@003
+      MYSQL_DATABASE: NoiseApp
+    ports:
+      - "3406:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  fastapi:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql  # Ensures MySQL starts before FastAPI
+
+volumes:
+  mysql_data:
+    driver: local

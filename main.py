@@ -7,12 +7,25 @@ import  models
 from database import engine,SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Query
+from sqlalchemy.sql import func
+from typing import List, Dict
 
 from typing import Optional
 
 from datetime import date, time ,datetime
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
+from fastapi.middleware.cors import CORSMiddleware
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Allow your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
 
 from request_schema import UserBase,NoiseCollectionBase,NoisePostRequestSchema,NoiseFilterSchema
 
@@ -34,15 +47,18 @@ async def create_user(user:UserBase,db:db_dependency):
 
 @app.post("/noise/",status_code=status.HTTP_201_CREATED,response_model=NoiseCollectionBase)
 async def create_noise_entry(requestSchema:NoisePostRequestSchema,db:db_dependency):
-    today = date.today()
-    current_date = today.strftime("%d-%m-%Y")
-    curremt_time = datetime.now().strftime("%H:%M:%S")
-    color_band="Green"
-    if requestSchema.max_noise_val>80 :
-        color_band ="Red"
-    elif requestSchema.max_noise_val>=20 and requestSchema.max_noise_val <=80:
-        color_band = "Yellow"
-    noiseDataBase = NoiseCollectionBase(
+    try:
+        today = date.today()
+        current_date = today.strftime("%d-%m-%Y")
+        curremt_time = datetime.now().strftime("%H:%M:%S")
+        color_band = "Green"
+
+        if requestSchema.max_noise_val > 80:
+            color_band = "Red"
+        elif 20 <= requestSchema.max_noise_val <= 80:
+            color_band = "Yellow"
+
+        noiseDataBase = NoiseCollectionBase(
             user_id=requestSchema.user_id,
             longitude=requestSchema.longitude,
             latitude=requestSchema.latitude,
@@ -51,10 +67,16 @@ async def create_noise_entry(requestSchema:NoisePostRequestSchema,db:db_dependen
             color_band=color_band,
             max_noise_val=requestSchema.max_noise_val
         )
-    noiseData = models.NoiseCollection(**noiseDataBase.model_dump())
-    db.add(noiseData)
-    db.commit()
-    return noiseDataBase
+
+        noiseData = models.NoiseCollection(**noiseDataBase.model_dump())
+        db.add(noiseData)
+        db.commit()
+
+        return noiseDataBase
+
+    except Exception as e:
+        db.rollback()  # Rollback in case of any error
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 
@@ -89,3 +111,64 @@ async def get_noise_data(
 
     results = query.all()
     return results
+
+@app.get("/noise/all", status_code=status.HTTP_200_OK,response_model=List[NoiseCollectionBase])
+async def getAllData(db: db_dependency):
+    results = db.query(models.NoiseCollection).all()
+    return results
+
+
+@app.get("/noise/leaderboard", status_code=status.HTTP_200_OK)
+async def get_leader_board_details(
+    db: db_dependency,
+    longitude: Optional[str] = Query(None),
+    latitude: Optional[str] = Query(None),
+    city: Optional[str] = Query(None) 
+):
+    if (longitude is None and latitude is not None) or (longitude is not None and latitude is None):
+        raise HTTPException(status_code=400, detail="You must provide both latitude and longitude")
+
+    query = (
+        db.query(
+            models.NoiseCollection.user_id,
+            func.count(models.NoiseCollection.user_id).label("report_count"),
+            func.sum(models.NoiseCollection.max_noise_val).label("total_dB_collected")
+        )
+        .group_by(models.NoiseCollection.user_id)
+        .order_by(func.count(models.NoiseCollection.user_id).desc())  # Sort by most reports
+    )
+
+    if longitude and latitude:
+        query = query.filter(models.NoiseCollection.longitude == longitude, models.NoiseCollection.latitude == latitude)
+    
+    results = query.all()
+
+    # Assign badges based on thresholds
+    def assign_badge(report_count, total_dB):
+        if report_count >= 5:
+            return "Noise Hero"
+        elif report_count >= 3:
+            return "Silent Guardian"
+        elif report_count >= 1:
+            return "Noise Rookie"
+        
+        if total_dB > 50000:
+            return "Decibel Master"
+        elif total_dB > 10000:
+            return "Echo Warrior"
+        
+        return "Newcomer"
+
+    leaderboard = []
+    for user_id, report_count, total_dB in results:
+        leaderboard.append({
+            "user_id": user_id,
+            "report_count": report_count,
+            "total_dB_collected": float(total_dB) if total_dB else 0,
+            "badge": assign_badge(report_count, total_dB)
+        })
+
+    return leaderboard
+
+
+

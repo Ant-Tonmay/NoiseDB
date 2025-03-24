@@ -18,8 +18,8 @@ class NoiseCollection(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(20), ForeignKey('users.user_id'))  # Foreign key reference
-    longitude = Column(String(10))
-    latitude = Column(String(10))
+    longitude = Column(String(20))
+    latitude = Column(String(20))
     date = Column(String(10))
     time = Column(String(10))
     max_noise_val = Column(Numeric)
