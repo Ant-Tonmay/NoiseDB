@@ -1,6 +1,9 @@
 
 ## 📡 Backend Setup (NoiseDB)
 
+Install Docker 
+`https://docs.docker.com/engine/install/ubuntu/`
+
 1. Navigate to the `NoiseDB` directory:
 
 ```bash
