@@ -28,6 +28,44 @@ docker compose up
 http://localhost:8000
 ```
 
+Here’s the corrected version:
+
+---
+
+## 📚 API Endpoints
+
+### 5. Add User
+
+- **Endpoint:**  
+```
+POST : http://0.0.0.0:8000/users
+```
+
+- **Request Body:**
+
+```json
+{
+  "user_id": "User1",
+  "first_name": "Temp",
+  "last_name": "User"
+}
+```
+
+---
+
+## 📊 Load Data
+
+1. Install required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the script to load data from CSV to the database:
+
+```bash
+python csv_to_sql.py
+```
 ---
 
 ## 🗺️ Frontend Setup (NoiseMap)
